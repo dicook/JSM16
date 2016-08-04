@@ -1,0 +1,121 @@
+---
+title: "Analysis of hierarchy experiment"
+author: "Di Cook"
+date: "August 3, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, error = FALSE, warning = FALSE)
+```
+
+## Detecting the larger value (`a` or `b`)
+
+```{r echo=FALSE, fig.align='center', fig.width=10, fig.height=3}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+cm_data <- read_csv("Cleveland and McGill hierarchy.csv", 
+                    col_names = c("id", "pie_5_choose", "pie_5_diff",
+                                  "pie_4_choose", "pie_4_diff",
+                                  "pie_2_choose", "pie_2_diff",
+                                  "pie_3_choose", "pie_3_diff",
+                                  "pie_1_choose", "pie_1_diff",
+                                  "bar_1_choose", "bar_1_diff",
+                                  "bar_2_choose", "bar_2_diff",
+                                  "bar_3_choose", "bar_3_diff",
+                                  "bar_4_choose", "bar_4_diff",
+                                  "bar_5_choose", "bar_5_diff",
+                                  "bubble_4_choose", "bubble_4_diff",
+                                  "bubble_5_choose", "bubble_5_diff",
+                                  "bubble_2_choose", "bubble_2_diff",
+                                  "bubble_1_choose", "bubble_1_diff",
+                                  "bubble_3_choose", "bubble_3_diff",
+                                  "color_4_choose", "color_4_diff",
+                                  "color_1_choose", "color_1_diff",
+                                  "color_2_choose", "color_2_diff",
+                                  "color_3_choose", "color_3_diff",
+                                  "color_5_choose", "color_5_diff",
+                                  "unaligned_4_choose", "unaligned_4_diff",
+                                  "unaligned_1_choose", "unaligned_1_diff",
+                                  "unaligned_2_choose", "unaligned_2_diff",
+                                  "unaligned_3_choose", "unaligned_3_diff",
+                                  "unaligned_5_choose", "unaligned_5_diff",
+                                  "time", "v1", "v2", "v3"), skip=1)
+cm_data <- cm_data[,1:51]
+cm_choose <- cm_data[,c(1,seq(2, 50, 2))]
+cm_diff <- cm_data[,c(1,seq(3, 51, 2))]
+cm_true <- c("b", "b", "a", "a", "a")
+cm_choose_m <- cm_choose %>% gather(plot, choice, -id) %>%
+  separate(plot, c("plot", "set", "junk"), sep="_") %>%
+  filter(choice != "") 
+cm_choose_m$set <- as.integer(cm_choose_m$set)
+cm_choose_m$correct <- ifelse(cm_choose_m$choice == cm_true[cm_choose_m$set], 
+  "right", "wrong")
+cm_choose_m_smry <- cm_choose_m %>% 
+  group_by(set, plot) %>%
+  summarise(prop_correct=length(correct[correct == "right"])/length(correct)) %>%
+  spread(plot, prop_correct) 
+ord <- order(apply(cm_choose_m_smry[,-1], 2, mean), decreasing=TRUE)
+
+cm_choose_m_smry[,c(1, ord+1)] %>% 
+  kable(digits=2, caption="Proportion correct by plot type and replicate")
+```
+
+<img src="https://dicook.github.io/JSM16/set1_bar.png" width="32"> <img src="https://dicook.github.io/JSM16/set1_bubble.png" width="32"> <img src="https://dicook.github.io/JSM16/set1_pie.png" width="32"> <img src="https://dicook.github.io/JSM16/set1_color.png" width="32"> <img src="https://dicook.github.io/JSM16/set1_unaligned.png" width="32">
+<img src="https://dicook.github.io/JSM16/set2_bar.png" width="32"> <img src="https://dicook.github.io/JSM16/set2_bubble.png" width="32"> <img src="https://dicook.github.io/JSM16/set2_pie.png" width="32"> <img src="https://dicook.github.io/JSM16/set2_color.png" width="32"> <img src="https://dicook.github.io/JSM16/set2_unaligned.png" width="32">
+<img src="https://dicook.github.io/JSM16/set3_bar.png" width="32"> <img src="https://dicook.github.io/JSM16/set3_bubble.png" width="32"> <img src="https://dicook.github.io/JSM16/set3_pie.png" width="32"> <img src="https://dicook.github.io/JSM16/set3_color.png" width="32"> <img src="https://dicook.github.io/JSM16/set3_unaligned.png" width="32">
+<img src="https://dicook.github.io/JSM16/set4_bar.png" width="32"> <img src="https://dicook.github.io/JSM16/set4_bubble.png" width="32"> <img src="https://dicook.github.io/JSM16/set4_pie.png" width="32"> <img src="https://dicook.github.io/JSM16/set4_color.png" width="32"> <img src="https://dicook.github.io/JSM16/set4_unaligned.png" width="32">
+<img src="https://dicook.github.io/JSM16/set5_bar.png" width="32"> <img src="https://dicook.github.io/JSM16/set5_bubble.png" width="32"> <img src="https://dicook.github.io/JSM16/set5_pie.png" width="32"> <img src="https://dicook.github.io/JSM16/set5_color.png" width="32"> <img src="https://dicook.github.io/JSM16/set5_unaligned.png" width="32">
+
+```{r echo=FALSE, fig.align='center', fig.width=10, fig.height=3}
+cm_choose_m$plot <- factor(cm_choose_m$plot, levels=colnames(cm_choose_m_smry)[ord+1])  
+ggplot(cm_choose_m, aes(x=plot, fill=correct)) + 
+  geom_bar() +
+  scale_fill_brewer(palette="Dark2") +
+  facet_wrap(~set, ncol=5) + theme(legend.position="bottom")
+```
+
+# Difference between sizes
+
+```{r echo=FALSE, fig.align='center', fig.width=10, fig.height=3}
+cm_diff_m <- cm_diff %>% gather(plot, diff, -id) %>%
+  separate(plot, c("plot", "set", "junk"), sep="_")
+cm_diff_m$set <- as.integer(cm_diff_m$set)
+cm_diff_true <- c(10/7, 14/8, 20/15, 7/6, 26/24)
+cm_diff_m <- cm_diff_m %>% mutate(diff_true=cm_diff_true[cm_diff_m$set]) %>%
+  mutate(diff_obs_true=diff-diff_true)
+cm_diff_m_sumry <- cm_diff_m %>%
+  group_by(plot, set) %>%
+  summarise(m=median(diff_obs_true, na.rm=T), s=mad(diff_obs_true, na.rm=T)) 
+cm_diff_m_sumry$plot <- factor(cm_diff_m_sumry$plot, levels=colnames(cm_choose_m_smry)[ord+1])
+cm_diff_m$plot <- factor(cm_diff_m$plot,
+                         levels=colnames(cm_choose_m_smry)[ord+1])
+ggplot(cm_diff_m, aes(x=plot, y=diff_obs_true)) + geom_boxplot() +
+  ylab("Difference from actual") + ylim(c(-1,1)) + 
+  facet_wrap(~set, ncol=5)
+```
+
+```{r eval=FALSE, echo=FALSE, fig.align='center', fig.width=10, fig.height=3}
+ggplot(cm_diff_m_sumry, aes(x=set, y=m)) + geom_hline(yintercept=0, color="white", size=2) + 
+  geom_point() + ylab("Difference from actual") +
+  geom_errorbar(aes(ymin=m-s, ymax=m+s), width=0.1) +
+  facet_wrap(~plot, ncol=5)
+```
+
+```{r eval=FALSE, echo=FALSE, fig.align='center', fig.width=10, fig.height=3}
+ggplot(cm_diff_m_sumry, aes(x=plot, y=m)) + geom_hline(yintercept=0, color="white", size=2) + 
+  geom_point() + ylab("Difference from actual") +
+  geom_errorbar(aes(ymin=m-s, ymax=m+s), width=0.1) +
+  facet_wrap(~set, ncol=5)
+```
+
+```{r eval=FALSE, echo=FALSE, fig.align='center', fig.width=10, fig.height=3}
+cm_diff_m$plot <- factor(cm_diff_m$plot,
+                         levels=colnames(cm_choose_m_smry)[ord+1])
+ggplot(cm_diff_m, aes(x=plot, y=diff_obs_true)) + geom_boxplot() +
+  ylab("Difference from actual") + ylim(c(-1,1)) + 
+  facet_wrap(~set, ncol=5)
+```
