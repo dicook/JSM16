@@ -94,8 +94,7 @@ cm_diff_m_sumry$plot <- factor(cm_diff_m_sumry$plot, levels=colnames(cm_choose_m
 cm_diff_m$plot <- factor(cm_diff_m$plot,
                          levels=colnames(cm_choose_m_smry)[ord+1])
 ggplot(cm_diff_m, aes(x=plot, y=diff_obs_true)) + geom_boxplot() +
-  ylab("Difference from actual") + ylim(c(-1,1)) + 
-  facet_wrap(~set, ncol=5)
+  ylab("Difference from actual") + ylim(c(-1,1)) 
 ```
 
 ```{r eval=FALSE, echo=FALSE, fig.align='center', fig.width=10, fig.height=3}
